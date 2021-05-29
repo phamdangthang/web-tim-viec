@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
+use App\Search;
 use App\User;
 use App\Company;
 use App\Address;
@@ -18,7 +20,6 @@ use App\Jobs\SendNewPassword;
 
 class UserController extends Controller
 {
-    //
 	public function home(){
 		$member = User::where('deleted','=','false')->count();
 		$company = Company::count();
@@ -26,7 +27,26 @@ class UserController extends Controller
 		$jobSummary = JobSummary::orderBy('id','desc')->take(5)->get();
 		$listCategory = Category::all();
 		$listAddress = Address::all();
-		return view('users.home',['cmember'=>$member,'ccompany'=>$company,'cJob'=>$job,'jobSummary'=>$jobSummary,'active_home'=>true,'listCategory'=>$listCategory,'listAddress'=>$listAddress]);
+		
+		$user = auth()->user();
+		if ($user->status == 1) { // Dang tim viec
+			$jobSuggests = JobSummary::where('title', 'like', '%' . $user->career . '%')
+				->orderBy('id', 'desc')
+				->take(10)
+				->get();
+		}
+
+		$dataView = [
+			'cmember'=>$member,
+			'ccompany'=>$company,
+			'cJob'=>$job,
+			'jobSummary'=>$jobSummary,
+			'active_home'=>true,
+			'listCategory'=>$listCategory,
+			'jobSuggests'=>$jobSuggests ?? [],
+			'listAddress'=>$listAddress
+		];
+		return view('users.home', $dataView);
 	}
 
 	public function showLogin(){
@@ -34,6 +54,7 @@ class UserController extends Controller
 	}
 
 	public function login(Request $request){
+		
 		$email = $request['email'];
 		$password = $request['password'];
 		if(Auth::attempt(['email'=>$email,'password'=>$password])){
@@ -41,6 +62,18 @@ class UserController extends Controller
 			if($userLogin->deleted==true){
 				return view('login',['error'=>"Tài khoản này đã bị vô hiệu hóa."]);
 			}
+
+			$lastLogin = Auth::user()->last_login;
+			$last30Days = $date = Carbon::now()->subDays(30)->toDateTimeString();
+			// Tat che do tim viec
+			if ($lastLogin < $last30Days) {
+				User::where('email', $email)->update([
+					'status' => 0
+				]);
+			}
+			User::where('email', $email)->update([
+				'last_login' => Carbon::now()->toDateTimeString()
+			]);
 			return redirect()->route('home');
 		}
 		else {
@@ -189,12 +222,13 @@ class UserController extends Controller
 	public function updateInfo(Request $request){
 		$rules = [
 			'email' => 'email|required',
-			
-			'fullName' => 'required'
+			'fullName' => 'required',
+			'career' => 'required'
 		];
 		$messages = [
 			'required'=> 'Không được để trống thông tin nào',
-			'email.email' => 'Email không đúng định dạng'
+			'email.email' => 'Email không đúng định dạng',
+			'career.required' => 'Tên ngành nghề không được để trống',
 		];
 		$validator = Validator::make($request->all(), $rules, $messages);
 		if ($validator->fails()) {
@@ -202,7 +236,6 @@ class UserController extends Controller
 				'error' => true,
 				'message' => $validator->errors()
 			], 200);
-    		// return redirect()->back()->withErrors($validator)->withInput();
 		} 
 		if($request->role == 2 && $request->company_id == 0){
 			$errors = new MessageBag(['errorCompany' => 'Hãy chọn công ty của bạn']);
@@ -217,6 +250,9 @@ class UserController extends Controller
 		$user->name = $request->fullName;
 		$user->email = $request->email;
 		$user->role_id = $request->role;
+		$user->status = $request->status;
+		$user->career = $request->career;
+		$user->experience = $request->experience;
 		if($request->role == 2)
 			$user->company_id = $request->company_id;
 		else 

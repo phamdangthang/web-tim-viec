@@ -216,7 +216,14 @@ class UserController extends Controller
 	public function formEditInfo(){
 		$listCompany = Company::all();
 		$listAddress = Address::all();
-		return view('users.edit-info',['listCompany'=>$listCompany,'listAddress'=>$listAddress]);
+		$listCategory = Category::all();
+
+		$viewData = [
+			'listCategory' => $listCategory,
+			'listCompany' => $listCompany,
+			'listAddress' => $listAddress,
+		];
+		return view('users.edit-info', $viewData);
 	}
 	
 	public function updateInfo(Request $request){

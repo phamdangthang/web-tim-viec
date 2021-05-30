@@ -2048,8 +2048,9 @@ footer {
     padding: 15px;
     display: inline-block;
     margin-bottom: 15px;
-}
-.job-list .thumb {
+    width: 100%;
+  }
+  .job-list .thumb {
     float: left;
 }
 .job-list .thumb img {
@@ -3495,7 +3496,15 @@ blockquote p a:hover {
       width: 100%
   }
 
-  .image-100-100{
-      width: 100px;
-      height: 100px;
-  }
+.image-100-100{
+  width: 100px;
+  height: 100px;
+}
+
+.d-flex {
+  display: flex !important;
+}
+
+.cur-pointer {
+  cursor: pointer;
+}

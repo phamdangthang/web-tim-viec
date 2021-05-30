@@ -30,48 +30,90 @@ class JobController extends Controller
 	}
 
 	public function searchJob(Request $request){
-		$listCategory = Category::all();
-		if($request->address == '' && $request->category == ''){
-			$jobs = JobSummary::selectRaw('job_summaries.*')
-			->join('companies','companies.id','=','job_summaries.company_id')
-			->where('companies.name','like','%'.$request->company.'%')
-			->orderBy('id','DESC')
-			->paginate(5);
+		// $listCategory = Category::all();
+		// if($request->address == '' && $request->category == ''){
+		// 	$jobs = JobSummary::selectRaw('job_summaries.*')
+		// 	->join('companies','companies.id','=','job_summaries.company_id')
+		// 	->where('companies.name','like','%'.$request->company.'%')
+		// 	->orderBy('id','DESC')
+		// 	->paginate(5);
 
-		}
-		else if($request->address != '' && $request->category == ''){
-			$addr = (int)$request->address;
-			$jobs = JobSummary::selectRaw('job_summaries.*')
-			->join('companies','companies.id','=','job_summaries.company_id')
-			->join('address','address.id','=','job_summaries.address_id')
-			->where([['companies.name','like','%'.$request->company.'%'],['address.id','=',$addr]])
-			->orderBy('id','DESC')
-			->paginate(5);
-		}
-		else if($request->address == '' && $request->category != ''){
-			$cate = (int)$request->category;
-			$jobs = JobSummary::selectRaw('job_summaries.*')
-			->join('companies','companies.id','=','job_summaries.company_id')
-			->join('categories','categories.id','=','job_summaries.category_id')
-			->where([['companies.name','like','%'.$request->company.'%'],['categories.id','=',$cate]])
-			->orderBy('id','DESC')
-			->paginate(5);
-		}
-		else {
-			$addr = (int)$request->address;
-			$cate = (int)$request->category;
-			$jobs = JobSummary::selectRaw('job_summaries.*')
-			->join('companies','companies.id','=','job_summaries.company_id')
-			->join('categories','categories.id','=','job_summaries.category_id')
-			->join('address','address.id','=','job_summaries.address_id')
-			->where([['companies.name','like','%'.$request->company.'%'],['categories.id','=',$cate],['address.id','=',$addr]])
-			->orderBy('id','DESC')
-			->paginate(5);
-		}
+		// }
+		// else if($request->address != '' && $request->category == ''){
+		// 	$addr = (int)$request->address;
+		// 	$jobs = JobSummary::selectRaw('job_summaries.*')
+		// 	->join('companies','companies.id','=','job_summaries.company_id')
+		// 	->join('address','address.id','=','job_summaries.address_id')
+		// 	->where([['companies.name','like','%'.$request->company.'%'],['address.id','=',$addr]])
+		// 	->orderBy('id','DESC')
+		// 	->paginate(5);
+		// }
+		// else if($request->address == '' && $request->category != ''){
+		// 	$cate = (int)$request->category;
+		// 	$jobs = JobSummary::selectRaw('job_summaries.*')
+		// 	->join('companies','companies.id','=','job_summaries.company_id')
+		// 	->join('categories','categories.id','=','job_summaries.category_id')
+		// 	->where([['companies.name','like','%'.$request->company.'%'],['categories.id','=',$cate]])
+		// 	->orderBy('id','DESC')
+		// 	->paginate(5);
+		// }
+		// else {
+		// 	$addr = (int)$request->address;
+		// 	$cate = (int)$request->category;
+		// 	$jobs = JobSummary::selectRaw('job_summaries.*')
+		// 	->join('companies','companies.id','=','job_summaries.company_id')
+		// 	->join('categories','categories.id','=','job_summaries.category_id')
+		// 	->join('address','address.id','=','job_summaries.address_id')
+		// 	->where([['companies.name','like','%'.$request->company.'%'],['categories.id','=',$cate],['address.id','=',$addr]])
+		// 	->orderBy('id','DESC')
+		// 	->paginate(5);
+		// }
 
 		
+		// $listAddress = Address::all();
+		// return view('users.search-resume',['jobs'=>$jobs,'active_job'=>true,'listCategory'=>$listCategory,'listAddress'=>$listAddress,'companySearch'=>$request->company]);
+
 		$listAddress = Address::all();
-		return view('users.search-resume',['jobs'=>$jobs,'active_job'=>true,'listCategory'=>$listCategory,'listAddress'=>$listAddress,'companySearch'=>$request->company]);
+		$listCategory = Category::all();
+
+		$jobs = JobSummary::query();
+
+		if (isset($request->company)) {
+			$jobs = $jobs->whereHas('company', function ($query) use($request) {
+				$query->where('name', 'like', '%'.$request->company.'%');
+			});
+		}
+
+		if (isset($request->category)) {
+			$jobs = $jobs->where('category_id', $request->category);
+		}
+
+		if (isset($request->address)) {
+			$jobs = $jobs->where('address_id', $request->address);
+		}
+
+		if (isset($request->salary)) {
+			$jobs = $jobs->whereHas('detail', function ($query) use($request) {
+				$query->where('salary', 'like', '%'.$request->salary.'%');
+			});
+		}
+
+		if (isset($request->experience)) {
+			$jobs = $jobs->whereHas('detail', function ($query) use($request) {
+				$query->where('experience', 'like', '%'.$request->experience.'%');
+			});
+		}
+
+		$jobs = $jobs->orderBy('id','DESC')->paginate(5);
+
+		return view('users.search-resume',[
+			'jobs' => $jobs,
+			'request' => $request,
+			'active_job' => true,
+			'listCategory' => $listCategory,
+			'listAddress' => $listAddress,
+			'companySearch' => $request->company
+		]);
 	}
 
 	public function findByCategory($id) {

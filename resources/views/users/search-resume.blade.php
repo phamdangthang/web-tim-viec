@@ -61,7 +61,13 @@
 										<span>{{ $jobs->firstItem() }} - {{   $jobs->lastItem() }}</span> trong tổng số {{ $jobs->total() }} tin</a>
 									</div>
 									<div class="pagination pull-right">
-										{!! $jobs->links() !!}
+										{!! $jobs->appends([
+											'company' => $request->company,
+											'category' => $request->category,
+											'address' => $request->address,
+											'salary' => $request->salary,
+											'experience' => $request->experience,
+										])->links() !!}
 									</div>
 								</div>
 							</div>

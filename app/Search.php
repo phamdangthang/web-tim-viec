@@ -11,6 +11,8 @@ class Search extends Model
     protected $fillable = [
         'company_name',
         'category',
-        'address'
+        'address',
+        'salary',
+        'experience'
     ];
 }

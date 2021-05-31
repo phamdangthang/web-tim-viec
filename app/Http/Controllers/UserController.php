@@ -28,13 +28,7 @@ class UserController extends Controller
 		$listCategory = Category::all();
 		$listAddress = Address::all();
 		
-		$user = auth()->user();
-		if ($user->status == 1) { // Dang tim viec
-			$jobSuggests = JobSummary::where('title', 'like', '%' . $user->career . '%')
-				->orderBy('id', 'desc')
-				->take(10)
-				->get();
-		}
+		$jobSuggests = $this->jobSuggestBySearch();
 
 		$dataView = [
 			'cmember'=>$member,
@@ -54,7 +48,6 @@ class UserController extends Controller
 	}
 
 	public function login(Request $request){
-		
 		$email = $request['email'];
 		$password = $request['password'];
 		if(Auth::attempt(['email'=>$email,'password'=>$password])){
@@ -269,4 +262,62 @@ class UserController extends Controller
 		return response()->json(['error'=>false]);
 	}
 
+	public function jobSuggestBySearch() {
+		$jobs = JobSummary::query();
+		$dataSearch = Search::orderBy('id', 'desc')->limit(5)->get();
+		$arrIds = [];
+		$tmp = [];
+		$user = auth()->user();
+
+		if ($user && $user->status == 1) { // Dang tim viec
+			$jobSuggestByProfile = JobSummary::where('title', 'like', '%' . $user->career . '%')
+				->orderBy('id', 'desc')
+				->take(5)
+				->get();
+
+			foreach ($jobSuggestByProfile as $item) {
+				$arrIds[] = $item->id;
+			}
+		}
+
+		foreach ($dataSearch as $item) {
+			if (isset($item->company)) {
+				$jobs = $jobs->whereHas('company', function ($query) use($item) {
+					$query->where('name', 'like', '%'.$item->company.'%');
+				});
+			}
+	
+			if (isset($item->category)) {
+				$jobs = $jobs->where('category_id', $item->category);
+			}
+	
+			if (isset($item->address)) {
+				$jobs = $jobs->where('address_id', $item->address);
+			}
+	
+			if (isset($item->salary)) {
+				$jobs = $jobs->whereHas('detail', function ($query) use($item) {
+					$query->where('salary', 'like', '%'.$item->salary.'%');
+				});
+			}
+	
+			if (isset($item->experience)) {
+				$jobs = $jobs->whereHas('detail', function ($query) use($item) {
+					$query->where('experience', 'like', '%'.$item->experience.'%');
+				});
+			}
+
+			$tmp[] = $jobs->get();
+		}
+
+		foreach ($tmp as $item) {
+			foreach ($item as $value) {
+				$arrIds[] = $value->id;
+			}
+		}
+		$jobIds = array_unique(array_values($arrIds));
+		$jobs = JobSummary::whereIn('id', $jobIds)->limit(15)->get();
+
+		return $jobs;
+	}
 }

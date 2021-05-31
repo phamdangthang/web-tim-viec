@@ -3508,3 +3508,11 @@ blockquote p a:hover {
 .cur-pointer {
   cursor: pointer;
 }
+
+.navbar-default .navbar-nav .dropdown {
+    background: #fffdfd;
+}
+
+.navbar-default .navbar-nav .dropdown:before {
+    border-color: transparent transparent #fffdfd;
+}

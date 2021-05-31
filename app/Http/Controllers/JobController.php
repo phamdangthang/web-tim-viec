@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Category;
+use App\Search;
 use App\JobSummary;
 use App\JobDetail;
 use App\Address;
@@ -104,6 +105,8 @@ class JobController extends Controller
 			});
 		}
 
+		$this->saveDataSearch($request->all());
+
 		$jobs = $jobs->orderBy('id','DESC')->paginate(5);
 
 		return view('users.search-resume',[
@@ -184,7 +187,10 @@ class JobController extends Controller
 		$this->sendMail($jobInfo);
 
 		return response()->json(["error"=>false]);
+	}
 
-
+	public function saveDataSearch($params) {
+		Search::create($params);
+		return '';
 	}
 }

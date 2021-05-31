@@ -67,7 +67,7 @@ Route::delete('/delete-recruit', 'UserController@deleteRecruit');
 
 Route::get('/user-apply/{jobID}','UserApplyController@listUserApply')->name('user-apply')->middleware('recuiter');
 
-Route::get('/edit-info','UserController@formEditInfo')->name('edit-info');
+Route::get('/edit-info','UserController@formEditInfo')->name('edit-info')->middleware('auth');
 
 
 Route::post('/mark-as-read','UserController@markAsRead')->name('mark-as-read');

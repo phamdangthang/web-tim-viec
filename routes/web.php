@@ -69,6 +69,9 @@ Route::get('/user-apply/{jobID}','UserApplyController@listUserApply')->name('use
 
 Route::get('/edit-info','UserController@formEditInfo')->name('edit-info')->middleware('auth');
 
+
+Route::post('/mark-as-read','UserController@markAsRead')->name('mark-as-read');
+
 Route::put('/update-info','UserController@updateInfo');
 Route::get('/test', 'UserApplyController@test');
 

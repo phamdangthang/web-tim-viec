@@ -12,6 +12,7 @@ use App\Address;
 use App\JobSummary;
 use App\Category;
 use App\JobFavorite;
+use App\Profile;
 use Illuminate\Support\MessageBag;
 use Validator;
 use Hash;
@@ -21,6 +22,7 @@ use App\Jobs\SendNewPassword;
 class UserController extends Controller
 {
 	public function home(){
+		$notifications = auth()->user()->unreadNotifications;
 		$member = User::where('deleted','=','false')->count();
 		$company = Company::count();
 		$job = JobSummary::count();
@@ -31,6 +33,7 @@ class UserController extends Controller
 		$jobSuggests = $this->jobSuggestBySearch();
 
 		$dataView = [
+			'notifications' => $notifications,
 			'cmember'=>$member,
 			'ccompany'=>$company,
 			'cJob'=>$job,
@@ -86,10 +89,17 @@ class UserController extends Controller
 	public function showSignup(){
 		$listCompany = Company::all();
 		$listAddress = Address::all();
-		return view('signup',['listCompany'=>$listCompany,'listAddress'=>$listAddress]);
+		$listCategory = Category::all();
+
+		return view('signup',[
+			'listCategory'=>$listCategory,
+			'listCompany'=>$listCompany,
+			'listAddress'=>$listAddress
+		]);
 	}
 
 	public function signup(Request $request){
+		// dd($request->all());
 		$rules = [
 			'email' => 'unique:users,email|email|required',
 			'password' => 'required|min:6',
@@ -116,17 +126,55 @@ class UserController extends Controller
 			return response()->json(['error'=>true,'message'=> $errors]);
 		}
 
+		if($request->role == 3){
+			if ($request->category_id == 0) {
+				$errors = new MessageBag(['errorCategory' => 'Hãy chọn ngành nghề của bạn']);
+				return response()->json(['error'=>true,'message'=> $errors]);
+			}
+			if ($request->address_id == 0) {
+				$errors = new MessageBag(['errorAddress' => 'Hãy chọn địa điểm của bạn']);
+				return response()->json(['error'=>true,'message'=> $errors]);
+			}
+			if ($request->experience == null) {
+				$errors = new MessageBag(['errorExperience' => 'Hãy bổ sung kinh nghiệm của bạn']);
+				return response()->json(['error'=>true,'message'=> $errors]);
+			}
+			if ($request->education == null) {
+				$errors = new MessageBag(['errorEducation' => 'Hãy bổ sung bằng cấp của bạn']);
+				return response()->json(['error'=>true,'message'=> $errors]);
+			}
+			if ($request->age == null) {
+				$errors = new MessageBag(['errorAge' => 'Hãy bổ sung tuổi của bạn']);
+				return response()->json(['error'=>true,'message'=> $errors]);
+			}
+		}
+
 		$user = new User;
 		$user->name = $request->fullName;
 		$user->password = bcrypt($request->password);
 		$user->email = $request->email;
 		$user->role_id = $request->role;
+
 		if($request->role == 2)
 			$user->company_id = $request->company_id;
-		else 
+		else
 			$user->company_id = null;
+
 		$user->deleted = false;
 		$user->save();
+		
+		if ($request->role == 3) {
+			Profile::create([
+				'user_id' => $user->id,
+				'category_id' => $request->category_id,
+				'address_id' => $request->address_id,
+				'experience' => $request->experience,
+				'education' => $request->education,
+				'sex' => $request->sex,
+				'age' => $request->age,
+			]);
+		}
+
 		return response()->json(['error'=>false]);
 
 	}
@@ -187,11 +235,12 @@ class UserController extends Controller
 	}
 
 	public function getRecruit(){
+		$notifications = auth()->user()->unreadNotifications;
 		$user=User::find(Auth::user()->id);
 		$listRecruit = $user->myRecruit()->paginate(5);
 		$listCategory = Category::all();
 		$listAddress = Address::all();
-		return view('users.my-recruit',["listRecruit"=>$listRecruit,'listCategory'=>$listCategory,'listAddress'=>$listAddress]);
+		return view('users.my-recruit',["listRecruit"=>$listRecruit,'listCategory'=>$listCategory,'listAddress'=>$listAddress,'notifications' => $notifications]);
 	}
 	
 	public function deleteRecruit(Request $request){
@@ -220,16 +269,27 @@ class UserController extends Controller
 	}
 	
 	public function updateInfo(Request $request){
+		// dd($request->all());
 		$rules = [
 			'email' => 'email|required',
 			'fullName' => 'required',
-			'career' => 'required'
+			// 'career' => 'required'
 		];
+
+		if ($request->role == 3) {
+			$rules['category_id'] = 'required';
+			$rules['address_id'] = 'required';
+			$rules['experience'] = 'required';
+			$rules['education'] = 'required';
+			$rules['age'] = 'required';
+		}
+
 		$messages = [
 			'required'=> 'Không được để trống thông tin nào',
 			'email.email' => 'Email không đúng định dạng',
-			'career.required' => 'Tên ngành nghề không được để trống',
+			// 'career.required' => 'Tên ngành nghề không được để trống',
 		];
+
 		$validator = Validator::make($request->all(), $rules, $messages);
 		if ($validator->fails()) {
 			return response()->json([
@@ -237,6 +297,7 @@ class UserController extends Controller
 				'message' => $validator->errors()
 			], 200);
 		} 
+
 		if($request->role == 2 && $request->company_id == 0){
 			$errors = new MessageBag(['errorCompany' => 'Hãy chọn công ty của bạn']);
 			return response()->json(['error'=>true,'message'=> $errors]);
@@ -246,19 +307,34 @@ class UserController extends Controller
 			$errors = new MessageBag(['errorEmail' => 'Email này đã được đăng kí']);
 			return response()->json(['error'=>true,'message'=> $errors]);
 		}
+
 		$user = Auth::user();
 		$user->name = $request->fullName;
 		$user->email = $request->email;
 		$user->role_id = $request->role;
 		$user->status = $request->status;
-		$user->career = $request->career;
-		$user->experience = $request->experience;
+		// $user->career = $request->career;
+		// $user->experience = $request->experience;
+
 		if($request->role == 2)
 			$user->company_id = $request->company_id;
 		else 
 			$user->company_id = null;
+		
 		$user->deleted = false;
 		$user->update();
+
+		if ($request->role == 3) {
+			$user->profile->update([
+				'category_id' => $request->category_id,
+				'address_id' => $request->address_id,
+				'experience' => $request->experience,
+				'education' => $request->education,
+				'sex' => $request->sex,
+				'age' => $request->age,
+			]);
+		}
+
 		return response()->json(['error'=>false]);
 	}
 
@@ -319,5 +395,10 @@ class UserController extends Controller
 		$jobs = JobSummary::whereIn('id', $jobIds)->limit(15)->get();
 
 		return $jobs;
+	}
+
+	public function markAsRead()
+	{
+		auth()->user()->unreadNotifications->markAsRead();
 	}
 }

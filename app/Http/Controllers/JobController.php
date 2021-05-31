@@ -24,10 +24,11 @@ class JobController extends Controller
 {
     //
 	public function showJob(Request $request){
+		$notifications = auth()->user()->unreadNotifications;
 		$jobs = JobSummary::orderBy('id','DESC')->paginate(5);
 		$listCategory = Category::all();
 		$listAddress = Address::all();
-		return view('users.search-resume',['jobs'=>$jobs,'active_job'=>true,'listCategory'=>$listCategory,'listAddress'=>$listAddress]);
+		return view('users.search-resume',['jobs'=>$jobs,'active_job'=>true,'listCategory'=>$listCategory,'listAddress'=>$listAddress, 'request' => $request,'notifications' => $notifications]);
 	}
 
 	public function searchJob(Request $request){
@@ -76,6 +77,7 @@ class JobController extends Controller
 
 		$listAddress = Address::all();
 		$listCategory = Category::all();
+		$notifications = auth()->user()->unreadNotifications;
 
 		$jobs = JobSummary::query();
 
@@ -115,25 +117,28 @@ class JobController extends Controller
 			'active_job' => true,
 			'listCategory' => $listCategory,
 			'listAddress' => $listAddress,
+			'notifications' => $notifications,
 			'companySearch' => $request->company
 		]);
 	}
 
 	public function findByCategory($id) {
+		$notifications = auth()->user()->unreadNotifications;
 		$jobs = JobSummary::where('category_id',$id)->paginate(5);
 		$category = Category::find($id);
 		$listCategory = Category::all();
 		$listAddress = Address::all();
-		return view('users.job-category',['jobs'=>$jobs,'active_job'=>true,'listCategory'=>$listCategory,'category'=>$category,'listAddress'=>$listAddress]);
+		return view('users.job-category',['jobs'=>$jobs,'active_job'=>true,'listCategory'=>$listCategory,'category'=>$category,'listAddress'=>$listAddress,'notifications' => $notifications]);
 
 	}
 
 	public function showJobDetail($id){
+		$notifications = auth()->user()->unreadNotifications;
 		$url =  URL::current();
 		$jobSummary = JobSummary::find($id);
 		$listCategory = Category::all();
 		$listAddress = Address::all();
-		return view('users.job-detail',['jobSummary'=>$jobSummary,'listCategory'=>$listCategory,'url'=>$url,'listAddress'=>$listAddress]);
+		return view('users.job-detail',['jobSummary'=>$jobSummary,'listCategory'=>$listCategory,'url'=>$url,'listAddress'=>$listAddress, 'notifications' => $notifications]);
 	}
 
 	public function showPostJob(){

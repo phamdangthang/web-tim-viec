@@ -185,7 +185,6 @@ Contact Us
                                     <select name="category" id="category" class="form-control">
                                         <option value="">Chọn ngành nghề</option>
                                         @foreach ($listCategory as $category)
-                                        {{-- expr --}}
                                         <option value="{{ $category->id }}">{{ $category->name }}</option>
                                         @endforeach
                                     </select>

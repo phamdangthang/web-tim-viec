@@ -21,7 +21,14 @@ $(document).ready(function(){
 				'email':$('#emailid').val(),
 				'password':$('#password').val(),
 				'cpassword': $('#cpassword').val(),
-				'company_id':$('#company_id').val()
+				'company_id':$('#company_id').val(),
+
+				'category_id':$('select[name="category_id"]').val(),
+				'address_id':$('select[name="address_id"]').val(),
+				'experience':$('input[name="experience"]').val(),
+				'education':$('input[name="education"]').val(),
+				'sex':$('input[name="sex"]:checked').val(),
+				'age':$('input[name="age"]').val(),
 			},
 			success:function(data){
 				if (data.error == true) {
@@ -41,6 +48,23 @@ $(document).ready(function(){
 					}
 					else if(data.message.errorCompany != undefined){
 						$('#error').text(data.message.errorCompany[0]);
+					}
+
+
+					else if(data.message.errorCategory != undefined){
+						$('#error').text(data.message.errorCategory[0]);
+					}
+					else if(data.message.errorAddress != undefined){
+						$('#error').text(data.message.errorAddress[0]);
+					}
+					else if(data.message.errorExperience != undefined){
+						$('#error').text(data.message.errorExperience[0]);
+					}
+					else if(data.message.errorEducation != undefined){
+						$('#error').text(data.message.errorEducation[0]);
+					}
+					else if(data.message.errorAge != undefined){
+						$('#error').text(data.message.errorAge[0]);
 					}
 				} 
 				else {

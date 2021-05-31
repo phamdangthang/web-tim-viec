@@ -57,4 +57,8 @@ class User extends Authenticatable
     public function getCV(){
         return $this->belongsTo('App\ApplyCV','id','user_id');
     }
+
+    public function profile(){
+        return $this->belongsTo('App\Profile','id','user_id');
+    }
 }

@@ -22,6 +22,7 @@ use App\Jobs\SendNewPassword;
 class UserController extends Controller
 {
 	public function home(){
+		$notifications = auth()->user()->unreadNotifications;
 		$member = User::where('deleted','=','false')->count();
 		$company = Company::count();
 		$job = JobSummary::count();
@@ -32,6 +33,7 @@ class UserController extends Controller
 		$jobSuggests = $this->jobSuggestBySearch();
 
 		$dataView = [
+			'notifications' => $notifications,
 			'cmember'=>$member,
 			'ccompany'=>$company,
 			'cJob'=>$job,
@@ -233,11 +235,12 @@ class UserController extends Controller
 	}
 
 	public function getRecruit(){
+		$notifications = auth()->user()->unreadNotifications;
 		$user=User::find(Auth::user()->id);
 		$listRecruit = $user->myRecruit()->paginate(5);
 		$listCategory = Category::all();
 		$listAddress = Address::all();
-		return view('users.my-recruit',["listRecruit"=>$listRecruit,'listCategory'=>$listCategory,'listAddress'=>$listAddress]);
+		return view('users.my-recruit',["listRecruit"=>$listRecruit,'listCategory'=>$listCategory,'listAddress'=>$listAddress,'notifications' => $notifications]);
 	}
 	
 	public function deleteRecruit(Request $request){
@@ -392,5 +395,10 @@ class UserController extends Controller
 		$jobs = JobSummary::whereIn('id', $jobIds)->limit(15)->get();
 
 		return $jobs;
+	}
+
+	public function markAsRead()
+	{
+		auth()->user()->unreadNotifications->markAsRead();
 	}
 }

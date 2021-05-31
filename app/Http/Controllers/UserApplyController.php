@@ -11,21 +11,22 @@ use App\JobSummary;
 use App\User;
 use Illuminate\Support\MessageBag;
 use Validator;
+use App\Notifications\JobApply;
 
 class UserApplyController extends Controller
 {
 	public function listUserApply($jobID){
+		$notifications = auth()->user()->unreadNotifications;
 		$listCategory = Category::all();
 		$listAddress = Address::all();
 		$job = JobSummary::find($jobID);
 		$listCV = $job->userApply()->paginate(5);
 
-		return view('users.list-CV',['listCategory'=>$listCategory,'listAddress'=>$listAddress,'listCV'=>$listCV,'jobID'=>$jobID]);
+		return view('users.list-CV',['listCategory'=>$listCategory,'listAddress'=>$listAddress,'listCV'=>$listCV,'jobID'=>$jobID,'notifications' => $notifications]);
 	}
 
 	public function sendCV(Request $request){
 		$rules = [
-			
 			'cv' => 'required'
 		];
 		$messages = [
@@ -61,7 +62,17 @@ class UserApplyController extends Controller
 		$user = JobSummary::find($idPost)->user;
 		$cate = JobSummary::find($idPost)->category->name;
 
+		$job = JobSummary::find($idPost);
+		$user_id_post_job = JobSummary::find($request->job_id)->user_id;
+		$data = [
+			'message' => auth()->user()->name.' đã ứng tuyển trong tin "'.$job->title.'"',
+			'job_id' => $job->id,
+		];
+
+		User::find($user_id_post_job)->notify(new JobApply($data));
+
 		SendApplyNewJob::dispatch($user, $idPost, $cate);
+
 
 		return response()->json(['error'=>false, 'email' => $user->email]);
 

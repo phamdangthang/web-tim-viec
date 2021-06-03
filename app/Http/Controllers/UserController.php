@@ -22,7 +22,10 @@ use App\Jobs\SendNewPassword;
 class UserController extends Controller
 {
 	public function home(){
-		$notifications = auth()->user()->unreadNotifications;
+		$notifications = [];
+		if (auth()->user()) {
+			$notifications = auth()->user()->unreadNotifications;
+		}
 		$member = User::where('deleted','=','false')->count();
 		$company = Company::count();
 		$job = JobSummary::count();
@@ -235,7 +238,11 @@ class UserController extends Controller
 	}
 
 	public function getRecruit(){
-		$notifications = auth()->user()->unreadNotifications;
+		$notifications = [];
+		if (auth()->user()) {
+			$notifications = auth()->user()->unreadNotifications;
+		}
+
 		$user=User::find(Auth::user()->id);
 		$listRecruit = $user->myRecruit()->paginate(5);
 		$listCategory = Category::all();

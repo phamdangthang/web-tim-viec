@@ -160,8 +160,11 @@ class UserController extends Controller
 
 		if($request->role == 2)
 			$user->company_id = $request->company_id;
-		else
+		else {
 			$user->company_id = null;
+			// $user->career = Category::findOrFail($request->category_id)->name;
+			// $user->experience = $request->experience;
+		}
 
 		$user->deleted = false;
 		$user->save();
@@ -353,7 +356,8 @@ class UserController extends Controller
 		$user = auth()->user();
 
 		if ($user && $user->status == 1) { // Dang tim viec
-			$jobSuggestByProfile = JobSummary::where('title', 'like', '%' . $user->career . '%')
+			// $jobSuggestByProfile = JobSummary::where('title', 'like', '%' . $user->career . '%')
+			$jobSuggestByProfile = JobSummary::where('category_id', $user->profile->category_id)
 				->orderBy('id', 'desc')
 				->take(5)
 				->get();
